@@ -197,7 +197,7 @@ Column
 leafletOutput("map")
 
 output$map <- renderLeaflet({
-  req(input$plot_brush)
+  req(input$plot_brush, !is.null(selected_rows()))
   leaflet(data = selected_points()) %>%
     addTiles(urlTemplate = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
                attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a> | <a href="https://www.ons.gov.uk/methodology/geography/licences">Contains OS data © Crown copyright and database right (2021)</a>') %>% 
@@ -222,7 +222,7 @@ observeEvent(selected_town(), {
 htmlOutput("summary")
 
 output$summary <- renderUI({
-    req(selected_town())
+    req(input$plot_brush, selected_town())
     town_id <- selected_rows()[selected_town(), ]$town_name
     HTML(paste0("<p><span class='town_name'>", town_id, "</span> is a ", tolower(filter(summary_stats, town_name == town_id)$Size)," town in the local authority district of ", filter(summary_stats, town_name == town_id)$area_name, ". In mid-2019 it had an estimated population of ", comma(filter(summary_stats, town_name == town_id)$`Total population`), " residents. ", percent(filter(summary_stats, town_name == town_id)$`Aged 0 to 15`), " of residents were aged under 15, ", percent(filter(summary_stats, town_name == town_id)$`Aged 16 to 64`), " were of working age (16-64), and ", percent(filter(summary_stats, town_name == town_id)$`Aged 65+`), " were aged 65 years or over.</p>"))
   })
