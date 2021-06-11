@@ -132,7 +132,7 @@ output$plot <- renderPlot({
     ggplot(indicator(), aes(x = indicator, y = value, colour = value)) +
       geom_quasirandom(size = 2, alpha = 1, show.legend = FALSE) +
       scale_color_viridis() +
-      scale_y_continuous(expand = c(0, 0), limits = c(0, NA), labels = function(x){paste0(x, "%")}) +
+      scale_y_continuous(expand = c(0, 0), limits = c(0, NA), labels = percent_format(accuracy = 1)) +
       labs(x = NULL, y = NULL, title = NULL, subtitle = NULL,
            caption = "Source: Office for National Statistics") +
       coord_flip(clip = 'off') +
@@ -180,7 +180,8 @@ output$table <- renderReactable({
                   ),
                 area_name = colDef(show = FALSE),
                 indicator = colDef(name = "Indicator"),
-                value = colDef(name = "Value", align = "left", sortable = TRUE)
+                value = colDef(name = "Value", align = "left", sortable = TRUE,
+                               format = colFormat(percent = TRUE, digits = 1))
                 )
     )
   })
@@ -223,6 +224,6 @@ htmlOutput("summary")
 output$summary <- renderUI({
     req(selected_town())
     town_id <- selected_rows()[selected_town(), ]$town_name
-    HTML(paste0("<p><span class='town_name'>", town_id, "</span> is a ", tolower(filter(summary_stats, town_name == town_id)$Size)," town in the local authority district of ", filter(summary_stats, town_name == town_id)$area_name, ". In mid-2019 it had an estimated population of ", comma(filter(summary_stats, town_name == town_id)$`Total population`), " residents. ", filter(summary_stats, town_name == town_id)$`Aged 0 to 15`, "% of residents were aged under 15, ", filter(summary_stats, town_name == town_id)$`Aged 16 to 64`, "% were of working age (16-64), and ", filter(summary_stats, town_name == town_id)$`Aged 65+`, "% were aged 65 years or over.</p>"))
+    HTML(paste0("<p><span class='town_name'>", town_id, "</span> is a ", tolower(filter(summary_stats, town_name == town_id)$Size)," town in the local authority district of ", filter(summary_stats, town_name == town_id)$area_name, ". In mid-2019 it had an estimated population of ", comma(filter(summary_stats, town_name == town_id)$`Total population`), " residents. ", percent(filter(summary_stats, town_name == town_id)$`Aged 0 to 15`), " of residents were aged under 15, ", percent(filter(summary_stats, town_name == town_id)$`Aged 16 to 64`), " were of working age (16-64), and ", percent(filter(summary_stats, town_name == town_id)$`Aged 65+`), " were aged 65 years or over.</p>"))
   })
 ```

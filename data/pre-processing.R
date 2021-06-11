@@ -3,7 +3,7 @@
 library(tidyverse) ; library(httr) ; library(readxl)
 
 # Nomis unique ID needed to return over 25,000 rows
-unique_id <- ""
+unique_id <- "0xee145daebf6a8fb032d4c0058c7e1c779378e556"
 
 # Various indicators for towns
 # Source: Centre for Subnational Analysis, ONS 
@@ -39,9 +39,9 @@ population <- read_csv(paste0("http://www.nomisweb.co.uk/api/v01/dataset/NM_2010
   rename(town_code = GEOGRAPHY_CODE) %>% 
   pivot_wider(names_from = C_AGE_NAME, values_from = OBS_VALUE) %>% 
   rename(`Total population` = `All Ages`) %>% 
-  mutate(`Aged 0 to 15` = round(`Aged 0 to 15`/`Total population`*100,1),
-         `Aged 16 to 64` = round(`Aged 16 to 64`/`Total population`*100,1),
-         `Aged 65+` = round(`Aged 65+`/`Total population`*100,1))
+  mutate(`Aged 0 to 15` = round(`Aged 0 to 15`/`Total population`,3),
+         `Aged 16 to 64` = round(`Aged 16 to 64`/`Total population`,3),
+         `Aged 65+` = round(`Aged 65+`/`Total population`,3))
 
 # join and write datasets
 left_join(indicators, population, by = "town_code") %>% 
