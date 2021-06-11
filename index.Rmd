@@ -1,0 +1,228 @@
+---
+title: "Towns in England & Wales"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: bootstrap
+    orientation: columns
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(shiny) ; library(tidyverse) ; library(sf) ; library(ggbeeswarm) ; library(reactable) ; library(leaflet) ; library(viridis) ; library(scales) ; library(ggtext) 
+
+# towns
+sf <- st_read("data/geospatial/towns.geojson") %>% 
+  mutate(popup = str_c("<strong>", town_name, "</strong><br/>", area_name) %>% map(HTML))
+
+# dropdown indicators
+df <- read_csv("data/indicators.csv") %>% 
+  select(town_code, `Population Growth 2009-2019`, `Employment Growth 2009-2019`, `Aged 0 to 15`, `Aged 16 to 64`, `Aged 65+`) %>% 
+  pivot_longer(-town_code, names_to = "indicator", values_to = "value")
+
+# summary indicators
+summary_stats <- read_csv("data/indicators.csv") %>% 
+  left_join(select(st_drop_geometry(sf), town_code, area_name), by = "town_code") %>% 
+  relocate("area_name", .after = "town_name")
+```
+
+```{css}
+body {
+  background-color: #FFFFFF;
+}
+
+.navbar {
+  background-color: #FFFFFF;
+  border-color: #FFFFFF;
+}
+
+.navbar-brand {
+  font-size: 30px!important;
+  color: #212121!important;
+  margin-left: 0px!important;
+}
+
+.section.sidebar {
+  margin-left: 10px;
+  background-color: #FFFFFF;
+  border-color: #FFFFFF;
+}
+
+.section.section {
+  border-color: #FFFFFF;
+}
+
+/* Inputs */
+  
+.control-label {
+  color: #757575;
+  margin-left: 10px;
+}
+
+.radio-inline {
+  margin-left: 10px;
+}
+
+/* Table styling */
+  
+#table input[type="radio"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  padding: 3px;
+  background-clip: content-box;
+  border: 1px solid #bbbbbb;
+  background-color: #e7e6e7;
+  border-radius: 50%;
+}
+
+#table input[type="radio"]:checked {
+  background-color: rgb(32, 96, 149);
+}
+
+/* Summary */
+
+p {
+  color: #222;
+  font-family: 'Source Sans Pro', sans-serif;
+  font-size: 21px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.town_name {
+  color:#FFFFFF; 
+  background-color: rgb(32, 96, 149);
+  font-weight: bold;
+  padding: 1px 4px 1px 4px;
+}
+```
+
+```{r, reactive}
+indicator <- reactive({
+  left_join(sf, filter(df, indicator == input$selected_indicator), by = "town_code")
+  })
+
+selected_points <- reactive({
+  brushedPoints(indicator(), input$plot_brush)
+})
+
+selected_rows <- reactive({
+  selected_points() %>% 
+    st_drop_geometry() %>% 
+    select(town_name, area_name, indicator, value)
+})
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+###  {data-height=70}
+```{r, inputs}
+radioButtons("selected_indicator", label = HTML("<h4>Choose an indicator and then brush the beeswarm plot</h4>"), choices = c("Population growth" = "Population Growth 2009-2019", "Employment growth" = "Employment Growth 2009-2019", "Percentage aged under 16" = "Aged 0 to 15", "Percentage of working age" = "Aged 16 to 64", "Percentage aged 65 or more" = "Aged 65+"), selected = "Population Growth 2009-2019", inline = TRUE, width = "100%")
+```
+
+### {data-height=200}
+```{r, beeswarm plot}
+plotOutput("plot", brush = "plot_brush", height = "100%")
+
+output$plot <- renderPlot({
+    ggplot(indicator(), aes(x = indicator, y = value, colour = value)) +
+      geom_quasirandom(size = 2, alpha = 1, show.legend = FALSE) +
+      scale_color_viridis() +
+      scale_y_continuous(expand = c(0, 0), limits = c(0, NA), labels = function(x){paste0(x, "%")}) +
+      labs(x = NULL, y = NULL, title = NULL, subtitle = NULL,
+           caption = "Source: Office for National Statistics") +
+      coord_flip(clip = 'off') +
+      theme_minimal(base_size = 14) + 
+      theme(text = element_text("Source Sans Pro", size = 14, lineheight = 18),
+            panel.grid.major.y = element_blank(),
+            panel.grid.minor = element_blank(),
+            plot.title = element_markdown(size = rel(0.85), face = "bold"),
+            plot.caption = element_text(size = rel(0.6), color = "#777777", hjust = 1, margin = margin(t = 15)),
+            axis.text.y = element_blank(),
+            axis.text.x = element_text(face = "bold")) 
+  }, res = 96)
+```
+
+###
+```{r, table}
+reactableOutput("table")
+
+output$table <- renderReactable({
+  req(input$plot_brush)
+    reactable(selected_rows(),
+              style = list(
+                fontFamily = "Source Sans Pro, sans-serif", 
+                fontSize = "14px"),
+              pagination = FALSE,
+              highlight = TRUE, 
+              sortable = FALSE,
+              searchable = TRUE,
+              selection = "single",
+              onClick = "select",
+              defaultSorted = "value",
+              defaultSortOrder = "desc",
+              columns = list(
+                town_name = colDef(
+                  name = "Town",
+                  style = list(borderRight = "1px solid rgba(0, 0, 0, 0.1)"),
+                  cell = function(value, index) {
+                    area_name <- selected_rows()$area_name[index]
+                    area_name <- if (!is.na(area_name)) area_name else "Unknown"
+                    tagList(
+                      div(style = list(fontWeight = 600), value),
+                      div(style = list(fontSize = 12), area_name)
+                    )
+                    }
+                  ),
+                area_name = colDef(show = FALSE),
+                indicator = colDef(name = "Indicator"),
+                value = colDef(name = "Value", align = "left", sortable = TRUE)
+                )
+    )
+  })
+
+selected_town <- reactive(getReactableState("table", "selected"))
+```
+
+Column
+-----------------------------------------------------------------------
+
+### {data-height=285}
+```{r, map}
+leafletOutput("map")
+
+output$map <- renderLeaflet({
+  req(input$plot_brush)
+  leaflet(data = selected_points()) %>%
+    addTiles(urlTemplate = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+               attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a> | <a href="https://www.ons.gov.uk/methodology/geography/licences">Contains OS data © Crown copyright and database right (2021)</a>') %>% 
+    addPolylines(fillColor = "transparent", weight = 1.5, opacity = 1, color = "#206095", group = "town_boundary") %>% 
+    addCircleMarkers(~lon, ~lat, stroke = TRUE, color = "#FFFFFF", opacity = 1, weight = 2, fillColor = "#206095", fillOpacity = 1, label = ~popup, labelOptions = labelOptions(textsize = "12px"), group = "centroid") %>%
+  groupOptions("centroid", zoomLevels = 1:11) %>% 
+  groupOptions("town_boundary", zoomLevels = 12:20)  
+  })
+
+observeEvent(selected_town(), {
+    temp <- filter(selected_points(), town_name == selected_rows()[selected_town(), ]$town_name)
+    leafletProxy("map", session) %>%
+      clearMarkers() %>% 
+      clearShapes() %>%
+      setView(lng = temp$lon, lat = temp$lat, zoom = 13) %>% 
+      addPolygons(data = temp, fillColor = "transparent", weight = 1.5, opacity = 1, color = "#206095")
+  })
+```
+
+###
+```{r, summary}
+htmlOutput("summary")
+
+output$summary <- renderUI({
+    req(selected_town())
+    town_id <- selected_rows()[selected_town(), ]$town_name
+    HTML(paste0("<p><span class='town_name'>", town_id, "</span> is a ", tolower(filter(summary_stats, town_name == town_id)$Size)," town in the local authority district of ", filter(summary_stats, town_name == town_id)$area_name, ". In mid-2019 it had an estimated population of ", comma(filter(summary_stats, town_name == town_id)$`Total population`), " residents. ", filter(summary_stats, town_name == town_id)$`Aged 0 to 15`, "% of residents were aged under 15, ", filter(summary_stats, town_name == town_id)$`Aged 16 to 64`, "% were of working age (16-64), and ", filter(summary_stats, town_name == town_id)$`Aged 65+`, "% were aged 65 years or over.</p>"))
+  })
+```
