@@ -16,7 +16,7 @@ sf <- st_read("data/geospatial/towns.geojson") %>%
 
 # dropdown indicators
 df <- read_csv("data/indicators.csv") %>% 
-  select(town_code, `Population Growth 2009-2019`, `Employment Growth 2009-2019`, `Aged 0 to 15`, `Aged 16 to 64`, `Aged 65+`) %>% 
+  select(town_code, `Population Growth 2009-2019`, `Employment Growth 2009-2019`) %>% 
   pivot_longer(-town_code, names_to = "indicator", values_to = "value")
 
 # summary indicators
@@ -116,12 +116,12 @@ selected_rows <- reactive({
 })
 ```
 
-Column {data-width=350}
+Column
 -----------------------------------------------------------------------
 
 ###  {data-height=70}
 ```{r, inputs}
-radioButtons("selected_indicator", label = HTML("<h4>Choose an indicator and then brush the beeswarm plot</h4>"), choices = c("Population growth" = "Population Growth 2009-2019", "Employment growth" = "Employment Growth 2009-2019", "Percentage aged under 16" = "Aged 0 to 15", "Percentage of working age" = "Aged 16 to 64", "Percentage aged 65 or more" = "Aged 65+"), selected = "Population Growth 2009-2019", inline = TRUE, width = "100%")
+radioButtons("selected_indicator", label = HTML("<h4>Choose an indicator and then brush the beeswarm plot</h4>"), choices = c("Population growth" = "Population Growth 2009-2019", "Employment growth" = "Employment Growth 2009-2019"), selected = "Population Growth 2009-2019", inline = TRUE, width = "100%")
 ```
 
 ### {data-height=200}
@@ -157,7 +157,7 @@ output$table <- renderReactable({
               style = list(
                 fontFamily = "Source Sans Pro, sans-serif", 
                 fontSize = "14px"),
-              pagination = FALSE,
+              pagination = TRUE,
               highlight = TRUE, 
               sortable = FALSE,
               searchable = TRUE,
@@ -224,6 +224,10 @@ htmlOutput("summary")
 output$summary <- renderUI({
     req(input$plot_brush, selected_town())
     town_id <- selected_rows()[selected_town(), ]$town_name
-    HTML(paste0("<p><span class='town_name'>", town_id, "</span> is a ", tolower(filter(summary_stats, town_name == town_id)$Size)," town in the local authority district of ", filter(summary_stats, town_name == town_id)$area_name, ". In mid-2019 it had an estimated population of ", comma(filter(summary_stats, town_name == town_id)$`Total population`), " residents. ", percent(filter(summary_stats, town_name == town_id)$`Aged 0 to 15`), " of residents were aged under 15, ", percent(filter(summary_stats, town_name == town_id)$`Aged 16 to 64`), " were of working age (16-64), and ", percent(filter(summary_stats, town_name == town_id)$`Aged 65+`), " were aged 65 years or over.</p>"))
+    if(input$selected_indicator == "Population Growth 2009-2019") {
+      HTML(paste0("<p><span class='town_name'>", town_id, "</span> is a ", tolower(filter(summary_stats, town_name == town_id)$Size)," town in the local authority district of ", filter(summary_stats, town_name == town_id)$area_name, ".</p><p>In mid-2019, it had an estimated population of ", comma(filter(summary_stats, town_name == town_id)$`Total population`), " residents. ", percent(filter(summary_stats, town_name == town_id)$`Aged 0 to 15`), " of residents were aged under 15, ", percent(filter(summary_stats, town_name == town_id)$`Aged 16 to 64`), " were of working age (16-64), and ", percent(filter(summary_stats, town_name == town_id)$`Aged 65+`), " were aged 65 years or over.</p><p>Population growth between 2009 and 2019 was ", filter(summary_stats, town_name == town_id)$`Population growth flag`, " at ", percent(filter(summary_stats, town_name == town_id)$`Population Growth 2009-2019`), ".<p/>"))
+    } else {
+      HTML(paste0("<p><span class='town_name'>", town_id, "</span> is a ", tolower(filter(summary_stats, town_name == town_id)$Size)," town in the local authority district of ", filter(summary_stats, town_name == town_id)$area_name, ".</p><p>The town is within ", filter(summary_stats, town_name == town_id)$`Income deprivation percentile`, " percentile for income deprivation where 1 is the highest deprivation percentile and 100 the lowest.</p><p>The job density or the number of jobs available for every resident of working age was ", filter(summary_stats, town_name == town_id)$`Job Density`, " in 2019.</p><p>Employment growth between 2009 and 2019 was ", filter(summary_stats, town_name == town_id)$`Employment growth flag`, " at ", percent(filter(summary_stats, town_name == town_id)$`Employment Growth 2009-2019`), ".<p/>"))
+      }
   })
 ```

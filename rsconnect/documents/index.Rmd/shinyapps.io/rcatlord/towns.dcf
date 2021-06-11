@@ -5,9 +5,9 @@ account: rcatlord
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4257583
-bundleId: 4704707
+bundleId: 4704745
 url: https://rcatlord.shinyapps.io/towns/
-when: 1623406671.72387
-lastSyncTime: 1623406671.72388
+when: 1623407594.76144
+lastSyncTime: 1623407594.76145
 asMultiple: FALSE
 asStatic: FALSE

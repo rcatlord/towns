@@ -1,9 +1,9 @@
 # Town indicators #
 
-library(tidyverse) ; library(httr) ; library(readxl)
+library(tidyverse) ; library(httr) ; library(readxl) ; library(sf)
 
 # Nomis unique ID needed to return over 25,000 rows
-unique_id <- "0xee145daebf6a8fb032d4c0058c7e1c779378e556"
+unique_id <- ""
 
 # Various indicators for towns
 # Source: Centre for Subnational Analysis, ONS 
@@ -21,16 +21,24 @@ indicators <- read_xlsx(tmp, sheet = "Towns_data") %>%
          `Population growth flag`,
          `Employment Growth 2009-2019`,
          `Employment growth flag`) %>% 
-  mutate(`Population growth flag` = case_when(
-    `Population growth flag` == "Above 2 x E&W average growth" ~ "more than twice the England & Wales average (8%)", 
-    `Population growth flag` == "Above E&W average growth" ~ "above the average for England & Wales (8%)", 
-    `Population growth flag` == "Below E&W average growth" ~ "below the England & Wales average (8%)", 
-    `Population growth flag` == "Declining Population" ~ "declining at less than 0%"),
-    `Employment growth flag` = case_when(
-      `Employment growth flag` == "Above 2 x E&W average growth" ~ "more than twice the England & Wales average (12%)",
-      `Employment growth flag` == "Above Average Growth" ~ "above the average for England & Wales (12%)",
-      `Employment growth flag` == "Below E&W average growth" ~ "below the England & Wales average (12%)",
-      `Employment growth flag` == "Declining Employment" ~ "declining at less than 0%"))
+  mutate(`Income deprivation percentile` = 
+           case_when(`Income deprivation percentile` %in% c(11,12,13) ~ paste0(`Income deprivation percentile`, "th"),
+                     `Income deprivation percentile` %% 10 == 1 ~ paste0(`Income deprivation percentile`, "st"),
+                     `Income deprivation percentile` %% 10 == 2 ~ paste0(`Income deprivation percentile`, "nd"),
+                     `Income deprivation percentile` %% 10 == 3 ~ paste0(`Income deprivation percentile`, "rd"),
+                     TRUE ~ paste0(`Income deprivation percentile`, "th")),
+         `Population growth flag` = 
+           case_when(
+             `Population growth flag` == "Above 2 x E&W average growth" ~ "above the average for England & Wales", 
+             `Population growth flag` == "Above E&W average growth" ~ "above the average for England & Wales", 
+             `Population growth flag` == "Below E&W average growth" ~ "below the England & Wales average", 
+             `Population growth flag` == "Declining Population" ~ "in decline"),
+         `Employment growth flag` = 
+           case_when(
+             `Employment growth flag` == "Above 2 x E&W average growth" ~ "above the average for England & Wales",
+             `Employment growth flag` == "Above Average Growth" ~ "above the average for England & Wales",
+             `Employment growth flag` == "Below E&W average growth" ~ "below the England & Wales average",
+             `Employment growth flag` == "Declining Employment" ~ "in decline"))
 
 # Mid-2019 population estimates ------------------------------------------------
 # Source: ONS
