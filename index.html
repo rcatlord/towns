@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+     <head>
+       <meta charset="utf-8">
+       <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+       <title>Towns</title>
+       <style>
+
+           body {
+               font-family: 'Open Sans', sans-serif;
+               font-weight: 400;
+               max-width: 700px;
+               margin: 0px auto;
+               }
+               
+            .credits {
+                font-size:0.8em; 
+            }
+
+       </style>
+     </head>
+     <body>
+        <div id="observablehq-519cdc9e">
+            <h2>Towns in England and Wales</h2>
+            <div class="observablehq-description"></div>
+            <div class="observablehq-viewof-selected"></div>
+            <div class="observablehq-map"></div>
+            <div class="observablehq-table"></div>
+            <br/><hr/>
+            <p class="credits"><span style="font-weight: bold;">Credits</span>: This tool was built in <a href="https://observablehq.com/" target="_blank">Observable</a> using <a href="https://vega.github.io/vega-lite/" target="_blank">Vega-Lite</a> and the <a href="https://observablehq.com/@ee2dev/vega-crossfilter/2" target="_blank">Vega crossfilter</a> by <a href="https://observablehq.com/@ee2dev" target="_blank">ee2dev</a>.</p>
+          </div>
+          <script type="module">
+            import {Runtime, Inspector} from "https://cdn.jsdelivr.net/npm/@observablehq/runtime@4/dist/runtime.js";
+            import define from "https://api.observablehq.com/@rcatlord/towns.js?v=3";
+            (new Runtime).module(define, name => {
+              if (name === "description") return Inspector.into("#observablehq-519cdc9e .observablehq-description")();
+              if (name === "viewof selected") return Inspector.into("#observablehq-519cdc9e .observablehq-viewof-selected")();
+              if (name === "map") return Inspector.into("#observablehq-519cdc9e .observablehq-map")();
+              if (name === "table") return Inspector.into("#observablehq-519cdc9e .observablehq-table")();
+            });
+          </script>
+     </body>
+   </html>
