@@ -42,6 +42,4 @@ vignettes/*.pdf
 .Renviron
 
 # shinyapps.io/
-rsconnect
-
-
+rsconnect/
